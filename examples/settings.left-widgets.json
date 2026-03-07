@@ -43,15 +43,5 @@
     "id": "plugin:agent-status",
     "maxWidth": 190,
     "textColor": "none"
-  },
-  {
-    "colorizeIcons": false,
-    "hideMode": "hidden",
-    "id": "ActiveWindow",
-    "maxWidth": 145,
-    "scrollingMode": "hover",
-    "showIcon": true,
-    "textColor": "none",
-    "useFixedWidth": false
   }
 ]

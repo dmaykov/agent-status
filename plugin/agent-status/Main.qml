@@ -52,7 +52,7 @@ Item {
   Process {
     id: helperProcess
 
-    command: ["python3", root.pluginApi.pluginDir + "/agent_status_helper.py"]
+    command: [root.pluginApi.pluginDir + "/agent_status_helper"]
     workingDirectory: root.pluginApi.pluginDir
     running: true
 
@@ -99,14 +99,6 @@ Item {
     onLoadFailed: function () {
       root.stateData = root.defaultState();
     }
-  }
-
-  Timer {
-    id: stateRefresh
-    interval: 1000
-    repeat: true
-    running: true
-    onTriggered: stateFile.reload()
   }
 
   Component.onCompleted: {

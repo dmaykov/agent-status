@@ -9,7 +9,8 @@ This folder contains the source for the `agent-status` Noctalia plugin that show
   - `Main.qml`
   - `BarWidget.qml`
   - `Panel.qml`
-  - `agent_status_helper.py`
+  - `helper/`
+  - `icons/`
 - `examples/`
   - `plugins.json.fragment`
   - `settings.left-widgets.json`
@@ -21,6 +22,7 @@ This folder contains the source for the `agent-status` Noctalia plugin that show
 - Adds a bar widget that summarizes AI agents on the focused workspace.
 - Opens a panel listing tracked agents on the focused workspace.
 - Detects live `codex` and `claude` terminals from Niri + `/proc`.
+- Refreshes from `niri msg -j event-stream` with a short debounce instead of a 1 second poll loop.
 - Recovers prompts after the fact:
   - Codex from `~/.codex/state_5.sqlite`
   - Claude from `~/.claude/projects/**/*.jsonl`
@@ -48,6 +50,7 @@ You still need to wire the plugin into your Noctalia config yourself.
    Example fragment: `examples/plugins.json.fragment`
 2. Add `plugin:agent-status` to your bar widgets in `~/.config/noctalia/settings.json`
    Example left section: `examples/settings.left-widgets.json`
+   Remove the separate `ActiveWindow` entry if you want the agent widget to act as the only active-window fallback.
 3. Restart Noctalia:
 
 ```bash
@@ -65,7 +68,8 @@ Example Niri bindings are in `examples/niri-ai-keybinds.kdl`.
 - Linux with `/proc`
 - `niri` available on `$PATH`
 - Noctalia / Quickshell plugin support
-- `python3`
+- Go 1.26+ to build the helper during install
+- `sqlite3`
 - Alacritty windows for the tracked terminal agents
 
 ## Editing workflow
@@ -73,7 +77,7 @@ Example Niri bindings are in `examples/niri-ai-keybinds.kdl`.
 Edit the source here:
 
 - `plugin/agent-status/*.qml`
-- `plugin/agent-status/agent_status_helper.py`
+- `plugin/agent-status/helper/main.go`
 
 Then reinstall by rerunning:
 

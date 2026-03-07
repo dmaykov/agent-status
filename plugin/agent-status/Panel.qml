@@ -18,6 +18,16 @@ Item {
   readonly property var agents: focusedWorkspace ? (focusedWorkspace.agents || []) : []
   readonly property real maxPanelHeight: ((pluginApi?.panelOpenScreen?.height || 900) * 0.72)
 
+  function iconSourceForTool(tool) {
+    if (tool === "codex") {
+      return pluginApi.pluginDir + "/icons/chatgpt-icon.png";
+    }
+    if (tool === "claude") {
+      return pluginApi.pluginDir + "/icons/claude-ai-icon.png";
+    }
+    return "";
+  }
+
   ColumnLayout {
     x: Style.marginL
     y: Style.marginL
@@ -33,7 +43,7 @@ Item {
         Layout.fillWidth: true
         text: focusedWorkspace ? `Workspace ${focusedWorkspace.name || focusedWorkspace.idx}` : "Workspace agents"
         color: Color.mOnSurface
-        font.pixelSize: Math.round(16 * Style.uiScaleRatio)
+        font.pixelSize: Math.round(18 * Style.uiScaleRatio)
         font.bold: true
         elide: Text.ElideRight
       }
@@ -42,7 +52,7 @@ Item {
         Layout.fillWidth: true
         text: agents.length > 0 ? `${agents.length} tracked agent${agents.length === 1 ? "" : "s"}` : "No tracked agents on this workspace"
         color: Color.mOnSurfaceVariant
-        font.pixelSize: Math.round(12 * Style.uiScaleRatio)
+        font.pixelSize: Math.round(13 * Style.uiScaleRatio)
         elide: Text.ElideRight
       }
     }
@@ -76,7 +86,7 @@ Item {
             anchors.centerIn: parent
             text: "No tracked agents on this workspace."
             color: Color.mOnSurfaceVariant
-            font.pixelSize: Math.round(13 * Style.uiScaleRatio)
+            font.pixelSize: Math.round(14 * Style.uiScaleRatio)
           }
         }
 
@@ -98,19 +108,17 @@ Item {
               anchors.margins: Style.marginM
               spacing: Style.marginM
 
-              Rectangle {
+              Item {
                 Layout.alignment: Qt.AlignTop
-                Layout.preferredWidth: Math.round(72 * Style.uiScaleRatio)
-                Layout.preferredHeight: Math.round(26 * Style.uiScaleRatio)
-                radius: height / 2
-                color: modelData.tool === "codex" ? Color.mPrimary : Color.mSecondary
+                Layout.preferredWidth: Math.round(30 * Style.uiScaleRatio)
+                Layout.preferredHeight: Math.round(30 * Style.uiScaleRatio)
 
-                Text {
-                  anchors.centerIn: parent
-                  text: String(modelData.tool_display || modelData.tool || "agent").toUpperCase()
-                  color: modelData.tool === "codex" ? Color.mOnPrimary : Color.mOnSurface
-                  font.pixelSize: Math.round(11 * Style.uiScaleRatio)
-                  font.bold: true
+                Image {
+                  anchors.fill: parent
+                  source: root.iconSourceForTool(String(modelData.tool || ""))
+                  fillMode: Image.PreserveAspectFit
+                  smooth: true
+                  mipmap: true
                 }
               }
 
@@ -128,7 +136,7 @@ Item {
                     Layout.fillWidth: true
                     text: modelData.label || "Untitled agent"
                     color: Color.mOnSurface
-                    font.pixelSize: Math.round(14 * Style.uiScaleRatio)
+                    font.pixelSize: Math.round(16 * Style.uiScaleRatio)
                     font.bold: true
                     elide: Text.ElideRight
                   }
@@ -137,7 +145,7 @@ Item {
                     visible: modelData.focused
                     text: "Focused"
                     color: modelData.focused ? Color.mSecondary : Color.mOnSurfaceVariant
-                    font.pixelSize: Math.round(11 * Style.uiScaleRatio)
+                    font.pixelSize: Math.round(12 * Style.uiScaleRatio)
                     font.bold: true
                   }
                 }
@@ -146,7 +154,7 @@ Item {
                   Layout.fillWidth: true
                   text: modelData.prompt_first_line || modelData.label || ""
                   color: Color.mOnSurfaceVariant
-                  font.pixelSize: Math.round(12 * Style.uiScaleRatio)
+                  font.pixelSize: Math.round(14 * Style.uiScaleRatio)
                   wrapMode: Text.WordWrap
                   maximumLineCount: 2
                   elide: Text.ElideRight
@@ -157,7 +165,7 @@ Item {
                   visible: !!modelData.project_dir
                   text: modelData.project_dir || ""
                   color: Color.mOnSurfaceVariant
-                  font.pixelSize: Math.round(11 * Style.uiScaleRatio)
+                  font.pixelSize: Math.round(12 * Style.uiScaleRatio)
                   font.family: Settings.data.ui.fontFixed
                   elide: Text.ElideMiddle
                 }
@@ -173,10 +181,6 @@ Item {
                 Quickshell.execDetached(["niri", "msg", "action", "focus-window", "--id", String(modelData.window_id)]);
               }
             }
-
-            ToolTip.visible: rowMouse.containsMouse
-            ToolTip.delay: 300
-            ToolTip.text: modelData.window_title || modelData.label || ""
           }
         }
       }
