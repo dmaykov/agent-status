@@ -30,6 +30,11 @@ const (
 	maxEventStreamLineBytes  = 1024 * 1024
 	aiSummaryTimeout         = 25 * time.Second
 	aiSummaryRetryDelay      = 15 * time.Minute
+	inferredPromptMaxLead    = 2 * time.Minute
+	inferredPromptMaxLag     = 20 * time.Minute
+	freshAgentPlaceholderAge = 2 * time.Minute
+	freshInferredMaxLead     = 20 * time.Second
+	freshInferredMaxLag      = 5 * time.Minute
 )
 
 var (
@@ -113,6 +118,7 @@ type recoveredPrompt struct {
 	Label           string
 	PromptFirstLine string
 	LastPrompt      string
+	MatchKind       string
 }
 
 type finalAgent struct {
@@ -1386,6 +1392,7 @@ func queryCodexThreads(threadIDs []string, cwd string) map[string]recoveredPromp
 			UpdatedAt:       row.UpdatedAt,
 			PromptFirstLine: normalizePromptLine(prompt, 220),
 			Label:           summarizePromptWithTitle(prompt, row.Title, 52),
+			MatchKind:       "thread",
 		}
 	}
 
@@ -1450,6 +1457,7 @@ func recoverCodexPrompts(agents []detectedAgent) map[int]recoveredPrompt {
 		if !ok {
 			continue
 		}
+		thread.MatchKind = "direct"
 		result[agent.AgentPID] = thread
 		usedThreadIDs[threadID] = struct{}{}
 	}
@@ -1502,6 +1510,10 @@ func recoverCodexPrompts(agents []detectedAgent) map[int]recoveredPrompt {
 			}
 
 			selected := candidates[bestIndex]
+			if !isAcceptableInferredMatch(agent.AgentStartEpoch, selected.CreatedAt) {
+				continue
+			}
+			selected.MatchKind = "inferred"
 			result[agent.AgentPID] = selected
 			usedThreadIDs[selected.ThreadID] = struct{}{}
 			candidates = append(candidates[:bestIndex], candidates[bestIndex+1:]...)
@@ -1688,10 +1700,11 @@ func recoverClaudePrompts(agents []detectedAgent) map[int]recoveredPrompt {
 			}
 
 			selected := available[bestIndex]
-			if selected.CreatedAt > 0 && agent.AgentStartEpoch > 0 && math.Abs(float64(selected.CreatedAt)-agent.AgentStartEpoch) > 6*3600 {
+			if !isAcceptableInferredMatch(agent.AgentStartEpoch, selected.CreatedAt) {
 				continue
 			}
 
+			selected.MatchKind = "inferred"
 			result[agent.AgentPID] = selected
 			available = append(available[:bestIndex], available[bestIndex+1:]...)
 		}
@@ -1726,9 +1739,11 @@ func buildRecoveredPrompts(agents []detectedAgent) map[int]recoveredPrompt {
 func finalizeAgent(agent detectedAgent, recovered map[int]recoveredPrompt) finalAgent {
 	metadata := parseSessionFile(agent.WindowPID)
 	recoveredData, hasRecovered := recovered[agent.AgentPID]
+	freshAgent := isFreshAgent(agent)
+	usableRecovered := hasRecovered && canUseRecoveredPrompt(agent, recoveredData)
 
 	projectDir := metadata["project_dir"]
-	if projectDir == "" && hasRecovered {
+	if projectDir == "" && usableRecovered {
 		projectDir = recoveredData.ProjectDir
 	}
 	if projectDir == "" {
@@ -1736,16 +1751,22 @@ func finalizeAgent(agent detectedAgent, recovered map[int]recoveredPrompt) final
 	}
 
 	label := metadata["label"]
-	if label == "" && hasRecovered {
+	if label == "" && usableRecovered {
 		label = recoveredData.Label
+	}
+	if label == "" && shouldUsePlaceholder(freshAgent, metadata, usableRecovered) {
+		label = "Starting…"
 	}
 	if label == "" {
 		label = titleLabel(agent.WindowTitle, agent.Tool)
 	}
 
 	promptFirstLine := metadata["prompt_first_line"]
-	if promptFirstLine == "" && hasRecovered {
+	if promptFirstLine == "" && usableRecovered {
 		promptFirstLine = recoveredData.PromptFirstLine
+	}
+	if promptFirstLine == "" && label == "Starting…" {
+		promptFirstLine = "Waiting for prompt…"
 	}
 	if promptFirstLine == "" {
 		promptFirstLine = label
@@ -1764,6 +1785,55 @@ func finalizeAgent(agent detectedAgent, recovered map[int]recoveredPrompt) final
 		Position:        agent.Position,
 		FocusOrder:      agent.FocusOrder,
 	}
+}
+
+func isAcceptableInferredMatch(agentStartEpoch float64, createdAt int64) bool {
+	if createdAt <= 0 || agentStartEpoch <= 0 {
+		return false
+	}
+
+	delta := time.Duration(float64(time.Second) * (float64(createdAt) - agentStartEpoch))
+	return delta >= -inferredPromptMaxLead && delta <= inferredPromptMaxLag
+}
+
+func isReliableRecoveredPrompt(prompt recoveredPrompt) bool {
+	return prompt.MatchKind == "direct" || prompt.MatchKind == "metadata"
+}
+
+func canUseRecoveredPrompt(agent detectedAgent, prompt recoveredPrompt) bool {
+	if isReliableRecoveredPrompt(prompt) {
+		return true
+	}
+	if prompt.MatchKind != "inferred" {
+		return false
+	}
+	if !isFreshAgent(agent) {
+		return true
+	}
+	return isFreshRecoveredPrompt(agent, prompt)
+}
+
+func isFreshAgent(agent detectedAgent) bool {
+	if agent.AgentStartEpoch <= 0 {
+		return false
+	}
+	age := time.Since(time.Unix(int64(agent.AgentStartEpoch), 0))
+	return age >= 0 && age <= freshAgentPlaceholderAge
+}
+
+func isFreshRecoveredPrompt(agent detectedAgent, prompt recoveredPrompt) bool {
+	if agent.AgentStartEpoch <= 0 || prompt.CreatedAt <= 0 {
+		return false
+	}
+	delta := time.Duration(float64(time.Second) * (float64(prompt.CreatedAt) - agent.AgentStartEpoch))
+	return delta >= -freshInferredMaxLead && delta <= freshInferredMaxLag
+}
+
+func shouldUsePlaceholder(freshAgent bool, metadata map[string]string, usableRecovered bool) bool {
+	if len(metadata) > 0 || usableRecovered {
+		return false
+	}
+	return freshAgent
 }
 
 func buildState(windows []window, workspaces []workspace) (state, error) {
