@@ -18,8 +18,19 @@ Item {
   property var stateData: defaultState()
   readonly property var focusedWorkspace: stateData.focused_workspace || null
 
+  function restartHelper() {
+    helperProcess.running = false;
+    helperRestart.start();
+  }
+
   function defaultState() {
     return {
+      "summary_provider": {
+        "selected": "auto",
+        "effective": "",
+        "codex_available": false,
+        "claude_available": false
+      },
       "focused_workspace": {
         "id": -1,
         "idx": -1,

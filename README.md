@@ -4,13 +4,14 @@ This folder contains the source for the `agent-status` Noctalia plugin that show
 
 ## What is here
 
-- `plugin/agent-status/`
+- `plugin/`
   - `manifest.json`
   - `Main.qml`
   - `BarWidget.qml`
   - `Panel.qml`
-  - `helper/`
   - `icons/`
+- `helper/`
+  - Go helper split across multiple files
 - `examples/`
   - `plugins.json.fragment`
   - `settings.left-widgets.json`
@@ -76,8 +77,8 @@ Example Niri bindings are in `examples/niri-ai-keybinds.kdl`.
 
 Edit the source here:
 
-- `plugin/agent-status/*.qml`
-- `plugin/agent-status/helper/main.go`
+- `plugin/*.qml`
+- `helper/*.go`
 
 Then reinstall by rerunning:
 
