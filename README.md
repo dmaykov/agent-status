@@ -34,6 +34,8 @@ This folder contains the source for the `agent-status` Noctalia plugin that show
 Run:
 
 ```bash
+git clone https://github.com/dmaykov/agent-status.git
+cd agent-status
 ./install.sh
 ```
 
@@ -69,7 +71,8 @@ Example Niri bindings are in `examples/niri-ai-keybinds.kdl`.
 - Linux with `/proc`
 - `niri` available on `$PATH`
 - Noctalia / Quickshell plugin support
-- Go 1.26+ to build the helper during install
+- Go to build the helper during install
+  - `./install.sh` checks for `go` and can install it with confirmation
 - `sqlite3`
 - Alacritty windows for the tracked terminal agents
 
