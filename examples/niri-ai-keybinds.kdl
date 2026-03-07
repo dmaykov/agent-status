@@ -1,0 +1,11 @@
+Mod+Shift+U hotkey-overlay-title="Codex: System" {
+    spawn-sh "alacritty --working-directory /home/dmitry/tweaking -e codex -s danger-full-access";
+}
+
+Mod+Shift+R hotkey-overlay-title="Claude: RCM" {
+    spawn-sh "alacritty --working-directory /home/dmitry/code/rcm -e claude --dangerously-skip-permissions";
+}
+
+Mod+Shift+D hotkey-overlay-title="Claude: Dental" {
+    spawn-sh "alacritty --working-directory /home/dmitry/code/dental -e claude --dangerously-skip-permissions";
+}

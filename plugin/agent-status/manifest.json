@@ -1,0 +1,17 @@
+{
+  "id": "agent-status",
+  "name": "Agent Status",
+  "version": "0.1.0",
+  "author": "Codex",
+  "description": "Shows AI agent activity for the focused Niri workspace and opens a workspace agent panel.",
+  "entryPoints": {
+    "main": "Main.qml",
+    "barWidget": "BarWidget.qml",
+    "panel": "Panel.qml"
+  },
+  "metadata": {
+    "hideMode": "hidden",
+    "maxWidth": 190,
+    "textColor": "none"
+  }
+}
