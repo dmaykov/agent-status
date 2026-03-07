@@ -15,9 +15,10 @@ Item {
 
   property bool allowAttach: true
   property real contentPreferredWidth: Math.round(460 * Style.uiScaleRatio)
-  readonly property real baseContentPreferredHeight: Math.max(250, 124 + (agents.length * 92 * Style.uiScaleRatio))
+  readonly property real baseContentPreferredHeight: contentLayout.implicitHeight + (Style.marginL * 2)
   readonly property real settingsPreferredHeight: settingsOpen ? (settingsContent.implicitHeight + (Style.marginL * 4)) : 0
   property real contentPreferredHeight: Math.round(Math.min(maxPanelHeight, Math.max(baseContentPreferredHeight, settingsPreferredHeight)))
+  readonly property real maxListHeight: Math.max(0, maxPanelHeight - (headerRow.implicitHeight + panelDivider.implicitHeight + (Style.marginM * 2) + (Style.marginL * 2)))
 
   readonly property var mainState: pluginApi?.mainInstance
   readonly property var focusedWorkspace: mainState ? mainState.focusedWorkspace : null
@@ -186,6 +187,8 @@ Item {
   }
 
   ColumnLayout {
+    id: contentLayout
+
     x: Style.marginL
     y: Style.marginL
     width: parent.width - Style.margin2L
@@ -193,6 +196,8 @@ Item {
     spacing: Style.marginM
 
     RowLayout {
+      id: headerRow
+
       Layout.fillWidth: true
       spacing: Style.marginM
 
@@ -290,6 +295,8 @@ Item {
     }
 
     Rectangle {
+      id: panelDivider
+
       Layout.fillWidth: true
       Layout.preferredHeight: 1
       color: Color.mOutline
@@ -297,11 +304,16 @@ Item {
     }
 
     ScrollView {
+      id: agentsScroll
+
       Layout.fillWidth: true
-      Layout.fillHeight: true
+      Layout.preferredHeight: Math.min(listContent.implicitHeight, root.maxListHeight)
+      Layout.fillHeight: false
       clip: true
 
       Column {
+        id: listContent
+
         width: parent.width
         spacing: Style.marginS
 
@@ -327,6 +339,9 @@ Item {
 
           delegate: Rectangle {
             required property var modelData
+            readonly property string agentLabelText: String(modelData.label || "Untitled agent")
+            readonly property string promptPreviewText: String(modelData.prompt_first_line || "").trim()
+            readonly property bool showPromptPreview: agents.length > 1 && promptPreviewText !== "" && promptPreviewText !== agentLabelText
 
             width: parent.width
             height: contentColumn.implicitHeight + (Style.marginM * 2)
@@ -366,7 +381,7 @@ Item {
 
                   Text {
                     Layout.fillWidth: true
-                    text: modelData.label || "Untitled agent"
+                    text: agentLabelText
                     color: Color.mOnSurface
                     font.pixelSize: Math.round(16 * Style.uiScaleRatio)
                     font.bold: true
@@ -384,7 +399,8 @@ Item {
 
                 Text {
                   Layout.fillWidth: true
-                  text: modelData.prompt_first_line || modelData.label || ""
+                  visible: showPromptPreview
+                  text: promptPreviewText
                   color: Color.mOnSurfaceVariant
                   font.pixelSize: Math.round(14 * Style.uiScaleRatio)
                   wrapMode: Text.WordWrap
