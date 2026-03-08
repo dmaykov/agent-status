@@ -196,8 +196,8 @@ Item {
       width: Math.max(height, countLabel.implicitWidth + 8)
       radius: height / 2
       color: Color.mSurfaceVariant
-      border.color: Style.capsuleBorderColor
-      border.width: Style.capsuleBorderWidth
+      border.color: Color.mPrimary
+      border.width: Math.max(2, Style.capsuleBorderWidth)
 
       Text {
         id: countLabel
