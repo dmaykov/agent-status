@@ -282,6 +282,7 @@ func buildAISummaryPrompt(prompt, title string) string {
 	input.WriteString("- No trailing punctuation\n")
 	input.WriteString("- Capture the main task, not setup or filler text\n")
 	input.WriteString("- Prefer concrete nouns or deliverables over generic verbs\n")
+	input.WriteString("- If the input contains a ticket tag like [ENG-1234] or [PROJ-42], put it first in the label verbatim\n")
 	input.WriteString("- If the request is vague, return the shortest faithful label\n\n")
 	if strings.TrimSpace(title) != "" {
 		input.WriteString("Recovered title:\n")
